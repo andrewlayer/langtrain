@@ -105,10 +105,11 @@ def main():
             save.reset()
 
         if run.get_clicked():
-            with open("./code.py", "w") as f:
+            with open("./code.js", "w") as f:
                 f.write(state.code)
-                outcome = os.system("bash ./interpreters/pythonInterpreter.bash " + state.code)
-                print(outcome)
+                outcome = os.system("bash ./interpreters/jsInterpreter.sh")
+                output.delete('1.0', tk.END)
+                output.insert('1.0', outcome)
             
             run.reset()
 
