@@ -1,1 +1,0 @@
-{"write me a code snippet in javasript that prints out numbers 0 to n": "function printNumbers(n) {\n  for (var i = 0; i < n; i++) {\n    console.log(i);\n  }\n}\n"}

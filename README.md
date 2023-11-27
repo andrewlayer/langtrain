@@ -20,7 +20,7 @@ These should be place in root (/langtrain).  They are used for inference in mojo
 
 
 # Startup
-- **Make sure you install pip dependancies from requirments.txt first**
+- **Make sure you install pip dependancies from requirments.txt first:** `pip install -r requirements.txt`
 - Also if using conda, have that enviorment activated
 
 Frontend:
