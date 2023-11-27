@@ -51,9 +51,12 @@ class CTkTextbox(customtkinter.CTkTextbox):
 
 
 class CTkLabel(customtkinter.CTkLabel):
-    def __init__(self, text, padx=0, pady=0, font=("", 12), width=100, anchor=tk.W, *args, **kwargs):
-        super().__init__(app, text=text, font=font, width=width, padx=padx, pady=pady, anchor=anchor, *args, **kwargs)
+    def __init__(self, text, padx, pady, font=("", 12), width=100, anchor=tk.W, *args, **kwargs):
+        super().__init__(app, text=text, font=font, width=width, anchor=anchor, padx=padx, pady=pady, *args, **kwargs)
         
     def configure(self, newtext, *args, **kwargs):
         return super().configure(text=newtext, *args, **kwargs)
 
+class CTkSpacer(customtkinter.CTkLabel):
+    def __init__(self, size=12):
+        super().__init__(app, text="", font=("", size))
