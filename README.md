@@ -3,3 +3,6 @@ Excited by Mojo, we decided to test its interopbility with some of python's most
 
 1. [**customkinter**](https://customtkinter.tomschimansky.com/): We need a fun way to show the project off!
 2. []
+
+For the backend: `mojo api_server.mojo`
+For the frontend: `mojo ctk.mojo`
