@@ -1,4 +1,6 @@
 from python import Python
+
+from api_client import call
     
 struct State:
     var text: String
@@ -54,11 +56,10 @@ def main():
         state.set_text(text)
 
         if button.get_clicked():
+            let response = call(state.text)
+
+            codeBlock.delete('1.0', tk.END)
+            codeBlock.insert('1.0', response)
+
             print(state.text)
             button.reset()
-
-
-   
-            
-
-
