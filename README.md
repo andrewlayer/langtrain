@@ -58,6 +58,8 @@ What exactally are we trying to do here?  Here is a diagram for help understandi
 - console does not display interpreter logs
 
 # Citations
+
+Thanks to Aydyn who put together the llama.mojo that we use for inference on our server!
 ```
 @misc{llama2.mojo,
   author = {Aydyn Tairov}, 
