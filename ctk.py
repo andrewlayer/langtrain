@@ -1,5 +1,5 @@
 import customtkinter
-import tkinter
+import tkinter as tk
 import uuid
 import time
 import customtkinter
@@ -17,8 +17,8 @@ class CTkButton(customtkinter.CTkButton):
         clicked (bool): Indicates whether the button has been clicked.
     """
 
-    def __init__(self, text, *args, **kwargs):
-        super().__init__(app, text=text, *args, **kwargs)
+    def __init__(self, text, width=150, *args, **kwargs):
+        super().__init__(app, text=text, width=width, *args, **kwargs)
 
         self.clicked = False
         self._command = lambda: self.set_clicked(True)
@@ -41,8 +41,8 @@ class CTkTextbox(customtkinter.CTkTextbox):
         text_changed (bool): Indicates if the text in the textbox has changed
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(app, *args, **kwargs)
+    def __init__(self, height=100, width=100, *args, **kwargs):
+        super().__init__(app, height=height, width=width, *args, **kwargs)
 
         self.text_changed = False
 
@@ -51,8 +51,8 @@ class CTkTextbox(customtkinter.CTkTextbox):
 
 
 class CTkLabel(customtkinter.CTkLabel):
-    def __init__(self, text, *args, **kwargs):
-        super().__init__(app, text=text, *args, **kwargs)
+    def __init__(self, text, padx=0, pady=0, font=("", 12), width=100, anchor=tk.W, *args, **kwargs):
+        super().__init__(app, text=text, font=font, width=width, padx=padx, pady=pady, anchor=anchor, *args, **kwargs)
         
     def configure(self, newtext, *args, **kwargs):
         return super().configure(text=newtext, *args, **kwargs)

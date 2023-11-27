@@ -14,24 +14,37 @@ def main():
     # "Imports"
     Python.add_to_path(".")
     let ctk = Python.import_module("ctk")
+    let tk = Python.import_module("tkinter")
     let app = ctk.app
 
     # Mojo App State
     var state = State()
     
     # Configure Window
-    app.title("my app")
-    app.geometry("1400x1000")
+    app.title("LangTrain")
+    app.geometry("800x1000")
+
+    let title = ctk.CTkLabel("LangTrain", 0, 10, ("", 50), 300, tk.N)
+    title.pack()
+
+    let promptLabel = ctk.CTkLabel("Code Prompt:", 0, 10, ("", 10), 700, tk.W)
+    promptLabel.pack()
 
     # Add Window Elements
-    let prompt = ctk.CTkTextbox()
+    let prompt = ctk.CTkTextbox(100, 700)
     prompt.pack()
 
-    let label = ctk.CTkLabel(state.text)
-    label.pack()
+    ctk.CTkLabel(" ", 0, 10).pack() # "padding"
 
-    let button = ctk.CTkButton("Print Text")
+    let button = ctk.CTkButton("Generate Code", 300)
     button.pack()
+
+    let generatedCode = ctk.CTkLabel("GeneratedCode:", 0, 10, ("", 10), 700, tk.W)
+    generatedCode.pack()
+
+    # Add Window Elements
+    let codeBlock = ctk.CTkTextbox(500, 700)
+    codeBlock.pack()
 
     # Run Loop
     while True:
@@ -42,7 +55,6 @@ def main():
 
         if button.get_clicked():
             print(state.text)
-            label.configure(state.text)
             button.reset()
 
 
