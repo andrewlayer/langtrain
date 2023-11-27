@@ -58,6 +58,7 @@ What exactally are we trying to do here?  Here is a diagram for help understandi
 - console does not display interpreter logs
 
 # Citations
+```
 @misc{llama2.mojo,
   author = {Aydyn Tairov}, 
   title = {Inference Llama2 in one file of pure Mojo},
@@ -66,3 +67,4 @@ What exactally are we trying to do here?  Here is a diagram for help understandi
   howpublished = {\url{https://github.com/tairov/llama2.mojo}},
   note = {Llama2 Mojo, MIT License}
 }
+```
