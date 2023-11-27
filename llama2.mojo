@@ -19,7 +19,6 @@ import time
 
 from python import Python
 
-var workers = 0
 
 alias nelts = (4*simdwidthof[DType.float32]())
 
@@ -601,6 +600,7 @@ fn batch_matmul[
     B: StaticTuple[n, BufferPtrFloat32],
     rows: Int,
     cols: Int,
+    workers: Int,
 ):
     @parameter
     fn compute_row(i: Int):
@@ -629,7 +629,7 @@ fn batch_matmul[
 
 
 @always_inline
-fn matmul(C: TensorF32, A: TensorF32, B: TensorF32) raises:
+fn matmul(C: TensorF32, A: TensorF32, B: TensorF32, workers: Int) raises:
     # B (d,n) @ A (n,) -> C (d,)
     matmul_dimension_checks(A.shape(), B.shape())
     batch_matmul[1](
@@ -638,11 +638,12 @@ fn matmul(C: TensorF32, A: TensorF32, B: TensorF32) raises:
         StaticTuple[1, BufferPtrFloat32](B.data()),
         B.dim(0),
         B.dim(1),
+        workers,
     )
 
 
 @always_inline
-fn matmul(C: TensorF32, A: TensorF32, B: TensorSlice) raises:
+fn matmul(C: TensorF32, A: TensorF32, B: TensorSlice, workers: Int) raises:
     # B (d,n) @ A (n,) -> C (d,)
     matmul_dimension_checks(A.shape(), B.shape())
     batch_matmul[1](
@@ -651,11 +652,12 @@ fn matmul(C: TensorF32, A: TensorF32, B: TensorSlice) raises:
         StaticTuple[1, BufferPtrFloat32](B.data()),
         B.dim(0),
         B.dim(1),
+        workers,
     )
 
 
 @always_inline
-fn matmul(C: TensorSlice, A: TensorF32, B: TensorSlice) raises:
+fn matmul(C: TensorSlice, A: TensorF32, B: TensorSlice, workers: Int) raises:
     # B (d,n) @ A (n,) -> C (d,)
     matmul_dimension_checks(A.shape(), B.shape())
     batch_matmul[1](
@@ -664,6 +666,7 @@ fn matmul(C: TensorSlice, A: TensorF32, B: TensorSlice) raises:
         StaticTuple[1, BufferPtrFloat32](B.data()),
         B.dim(0),
         B.dim(1),
+        workers,
     )
 
 
@@ -684,6 +687,7 @@ fn rope_rotation_llama(
     freq_cis_real_row: TensorSlice,
     freq_cis_imag_row: TensorSlice,
     config: Config,
+    workers: Int,
 ) -> None:
     # stories model, llama2
     let head_size = config.head_size
@@ -714,6 +718,7 @@ fn transformer(
     config: Config,
     inout state: RunState,
     weights: TransformerWeights,
+    workers: Int,
 ) raises -> None:
     # A few convenience variables
     let dim = config.dim
@@ -751,9 +756,10 @@ fn transformer(
                 ),
                 dim,
                 dim,
+                workers,
             )
         else:
-            matmul(state.q, state.xb, TensorSlice(weights.wq, l))
+            matmul(state.q, state.xb, TensorSlice(weights.wq, l), workers)
             batch_matmul[2](
                 StaticTuple[2, BufferPtrFloat32](state.k.data(), state.v.data()),
                 state.xb.data(),
@@ -762,10 +768,11 @@ fn transformer(
                 ),
                 kv_dim,
                 dim,
+                workers,
             )
 
         # Apply RoPE rotation to the q and k vectors for each head
-        rope_rotation_llama(state, freq_cis_real_row, freq_cis_imag_row, config)
+        rope_rotation_llama(state, freq_cis_real_row, freq_cis_imag_row, config, workers)
 
         memset_zero(state.xb.data(), state.xb.num_elements())
 
@@ -821,7 +828,7 @@ fn transformer(
 
         parallelize[loop_over_heads](config.n_heads, workers)
         # Final matrix multiplication to get the output of the attention
-        matmul(state.xb2, state.xb, TensorSlice(weights.wo, l))
+        matmul(state.xb2, state.xb, TensorSlice(weights.wo, l), workers)
         # Residual connection back into x
         accum(state.x, state.xb2)
         # FFN rmsnorm
@@ -836,6 +843,7 @@ fn transformer(
             ),
             hidden_dim,
             dim,
+            workers,
         )
 
         @parameter
@@ -848,7 +856,7 @@ fn transformer(
 
         vectorize[nelts, silu](hidden_dim)
         # Final matrix multiplication to get the output of the FFN
-        matmul(state.xb, state.hb, TensorSlice(weights.w2, l))
+        matmul(state.xb, state.hb, TensorSlice(weights.w2, l), workers)
 
         # Residual connection
         accum(state.x, state.xb)
@@ -857,7 +865,7 @@ fn transformer(
     rmsnorm(state.x, state.x, weights.rms_final_weight)
 
     # Classifier into logits
-    matmul(state.logits, state.x, weights.wcls)
+    matmul(state.logits, state.x, weights.wcls, workers)
 
 
 fn argmax(v: TensorF32) -> Int:
@@ -980,7 +988,7 @@ fn print_usage():
 
 
 fn run(prompt: String) raises -> String:
-    workers = num_cores()
+    let workers = num_cores()
     let tokenizer = StringRef("tok_tl-chat.bin")
     let checkpoint = StringRef("tl-chat.bin")
     let temperature = 0.0
@@ -1030,7 +1038,7 @@ fn run(prompt: String) raises -> String:
     var final_str: String = ""
     while pos < steps:
         # Forward the transformer to get logits for the next token
-        transformer(token, pos, config, state, weights)
+        transformer(token, pos, config, state, weights, workers)
 
         if pos < len(prompt_tokens):
             next_token = prompt_tokens[pos]
@@ -1064,28 +1072,3 @@ fn run(prompt: String) raises -> String:
         pos += 1
 
     return final_str
-
-
-fn main() raises:
-    let py_builtins = Python.import_module("builtins")
-    let socket = Python.import_module("socket")
-    while True:
-        let HOST = "127.0.0.1"
-        let PORT = 65432
-        let s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        _ = s.bind((HOST, PORT))
-        _ = s.listen()
-        let conn_and_addr = s.accept()
-        let conn = conn_and_addr[0]
-        let addr = conn_and_addr[1]
-        while True:
-            let data = conn.recv(1024)
-            let str_data = data.to_string()[2:-1]
-            if not data:
-                break
-            
-            let result = run(str_data)
-            let send_back = py_builtins.bytes(result, "utf-8")
-            # let send_back =  py_builtins.bytes("Hello, world!", "utf-8")
-            
-            _ = conn.sendall(send_back)
